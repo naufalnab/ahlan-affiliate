@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateCommission,
+  calculateTotalReferralRevenue,
+  calculateGeneratedCommission,
+  calculatePendingCommission,
+  calculateApprovedCommission,
+  calculatePaidCommission,
+  calculateNetReferralRevenue,
   conversion,
+  maskPhone,
   normalizePhone,
   simulation,
 } from "../lib/domain";
@@ -105,6 +112,92 @@ describe("Business Logic & Calculations", () => {
       };
       const parse = leadSchema.safeParse(invalid);
       expect(parse.success).toBe(false);
+    });
+  });
+
+  describe("Phone Masking", () => {
+    it("masks phone numbers correctly for public affiliate portal", () => {
+      expect(maskPhone("628120000001")).toBe("0812••••0001");
+      expect(maskPhone("081234567890")).toBe("0812••••7890");
+    });
+  });
+
+  describe("Domain Financial Calculations & Mathematical Integrity", () => {
+    const paidLeads = [
+      { id: "1", status: "LUNAS", registrationValue: 450000 }, // Ahmad Pratama
+      { id: "2", status: "LUNAS", registrationValue: 450000 }, // Zaid Akbar
+      { id: "3", status: "LUNAS", registrationValue: 500000 }, // Rahma Anjani
+      { id: "4", status: "LUNAS", registrationValue: 500000 }, // Rizky Hidayat
+      { id: "5", status: "DIHUBUNGI", registrationValue: 500000 }, // Suyadi (not lunas)
+    ];
+
+    const commissions = [
+      { id: "c1", amount: 75000, status: "PAID" },
+      { id: "c2", amount: 75000, status: "APPROVED" },
+      { id: "c3", amount: 75000, status: "PENDING" },
+      { id: "c4", amount: 75000, status: "PENDING" },
+      { id: "c5", amount: 75000, status: "CANCELLED" },
+    ];
+
+    it("calculates exactly Rp1.900.000 gross revenue from the 4 paid students", () => {
+      const gross = calculateTotalReferralRevenue(paidLeads);
+      expect(gross).toBe(1900000);
+    });
+
+    it("calculates exactly Rp300.000 total generated commission from active commissions", () => {
+      const generated = calculateGeneratedCommission(commissions);
+      expect(generated).toBe(300000);
+    });
+
+    it("calculates exactly Rp1.600.000 net referral revenue", () => {
+      const gross = calculateTotalReferralRevenue(paidLeads);
+      const commissionCost = calculateGeneratedCommission(commissions);
+      const net = calculateNetReferralRevenue(gross, commissionCost);
+      expect(net).toBe(1600000);
+    });
+
+    it("calculates pending, approved, and paid commissions without double-counting", () => {
+      expect(calculatePaidCommission(commissions)).toBe(75000);
+      expect(calculateApprovedCommission(commissions)).toBe(75000);
+      expect(calculatePendingCommission(commissions)).toBe(150000);
+      expect(
+        calculatePaidCommission(commissions) +
+          calculateApprovedCommission(commissions) +
+          calculatePendingCommission(commissions)
+      ).toBe(300000);
+    });
+  });
+
+  describe("Production URL Resolution (P0-3)", () => {
+    it("never returns localhost when NEXT_PUBLIC_APP_URL is configured for production", async () => {
+      const { getAppUrl } = await import("../lib/format");
+      const originalEnv = process.env.NEXT_PUBLIC_APP_URL;
+      try {
+        process.env.NEXT_PUBLIC_APP_URL = "https://ahlan-affiliate.vercel.app";
+        const url = getAppUrl();
+        expect(url).toBe("https://ahlan-affiliate.vercel.app");
+        expect(url).not.toContain("localhost");
+      } finally {
+        process.env.NEXT_PUBLIC_APP_URL = originalEnv;
+      }
+    });
+
+    it("falls back to canonical domain in production mode if env is unset", async () => {
+      const { getAppUrl } = await import("../lib/format");
+      const originalEnv = process.env.NEXT_PUBLIC_APP_URL;
+      const originalNodeEnv = process.env.NODE_ENV;
+      try {
+        delete process.env.NEXT_PUBLIC_APP_URL;
+        // @ts-expect-error test override
+        process.env.NODE_ENV = "production";
+        const url = getAppUrl();
+        expect(url).toBe("https://ahlan-affiliate.vercel.app");
+        expect(url).not.toContain("localhost");
+      } finally {
+        process.env.NEXT_PUBLIC_APP_URL = originalEnv;
+        // @ts-expect-error test override
+        process.env.NODE_ENV = originalNodeEnv;
+      }
     });
   });
 });

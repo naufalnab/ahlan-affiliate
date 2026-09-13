@@ -117,8 +117,8 @@ export default function Home() {
             </article>
             <article className="card">
               <Users color="#0d5c4d" size={24} />
-              <h3>Atribusi Rapi</h3>
-              <p className="muted">Ketahui secara akurat siapa yang membawa calon peserta sejak pendaftaran awal.</p>
+              <h3>Atribusi yang Jelas</h3>
+              <p className="muted">Ketahui dengan jelas siapa yang membawa setiap calon peserta sejak pendaftaran awal.</p>
             </article>
             <article className="card">
               <BarChart3 color="#0d5c4d" size={24} />
@@ -127,8 +127,8 @@ export default function Home() {
             </article>
             <article className="card">
               <ShieldCheck color="#0d5c4d" size={24} />
-              <h3>Komisi Terpercaya</h3>
-              <p className="muted">Hak komisi otomatis terhitung saat status pendaftaran telah diverifikasi lunas.</p>
+              <h3>Komisi Transparan</h3>
+              <p className="muted">Hak komisi tercatat otomatis setelah syarat yang ditentukan terpenuhi.</p>
             </article>
           </div>
         </section>

@@ -13,10 +13,14 @@ export default async function Demo() {
   const suyadiId = suyadi ? suyadi.id : "lead-suyadi";
   const suyadiStatus = suyadi ? String(suyadi.status) : "DIHUBUNGI";
 
-  const hasLunasLead = leads.some((l) => l.status === "LUNAS" && l.id === suyadiId);
-  const naufalCommissions = commissions.filter((c) => c.leadId === suyadiId || c.affiliate?.code === "NAUFAL");
-  const hasCommission = naufalCommissions.length > 0;
-  const hasPaidCommission = naufalCommissions.some((c) => c.status === "PAID");
+  // Accurate condition tracking
+  const isSuyadiLunas = suyadiStatus === "LUNAS";
+  const hasNewLead = leads.length > 12;
+
+  const suyadiCommission = commissions.find((c) => c.leadId === suyadiId);
+  const isCommissionApproved =
+    suyadiCommission?.status === "APPROVED" || suyadiCommission?.status === "PAID";
+  const isCommissionPaid = suyadiCommission?.status === "PAID";
 
   const referralUrl = `${appUrl()}/daftar?ref=NAUFAL`;
 
@@ -25,9 +29,10 @@ export default async function Demo() {
       summary={{
         suyadiStatus,
         suyadiId,
-        hasLunasLead,
-        hasCommission,
-        hasPaidCommission,
+        isSuyadiLunas,
+        hasNewLead,
+        isCommissionApproved,
+        isCommissionPaid,
         referralUrl,
       }}
     />

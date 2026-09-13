@@ -15,9 +15,10 @@ import { ResetDemoModal } from "@/components/ui";
 interface DemoStateSummary {
   suyadiStatus: string;
   suyadiId: string;
-  hasLunasLead: boolean;
-  hasCommission: boolean;
-  hasPaidCommission: boolean;
+  isSuyadiLunas: boolean;
+  hasNewLead: boolean;
+  isCommissionApproved: boolean;
+  isCommissionPaid: boolean;
   referralUrl: string;
 }
 
@@ -34,14 +35,14 @@ export default function DemoGuidedExperience({
     setVisitedSteps((prev) => ({ ...prev, [step]: true }));
   };
 
-  // Determine completions
-  const step1Complete = copied || visitedSteps[1];
-  const step2Complete = visitedSteps[2];
-  const step3Complete = visitedSteps[3];
-  const step4Complete = visitedSteps[4];
-  const step5Complete = summary.hasLunasLead;
-  const step6Complete = summary.hasCommission;
-  const step7Complete = summary.hasPaidCommission || visitedSteps[7];
+  // Accurate condition tracking: No future step is marked complete before its real condition is met!
+  const step1Complete = copied || !!visitedSteps[1];
+  const step2Complete = !!visitedSteps[2];
+  const step3Complete = summary.hasNewLead || !!visitedSteps[3];
+  const step4Complete = !!visitedSteps[4];
+  const step5Complete = summary.isSuyadiLunas; // ONLY complete when Suyadi actually reaches LUNAS
+  const step6Complete = summary.isCommissionPaid; // ONLY complete when commission is actually PAID
+  const step7Complete = summary.isCommissionPaid && !!visitedSteps[7];
 
   const completedCount = [
     step1Complete,
@@ -87,7 +88,7 @@ export default function DemoGuidedExperience({
         <p className="eyebrow">Panduan Presentasi Interaktif</p>
         <h1 style={{ fontSize: 32, margin: "6px 0 10px" }}>Uji Alur End-to-End Ahlan Affiliate</h1>
         <p className="lead" style={{ margin: "0 auto", maxWidth: 640 }}>
-          Simulasi lengkap: <b>Naufal (Affiliate)</b> → <b>Suyadi (Calon Peserta)</b> → <b>Pendaftaran</b> → <b>Pelunasan</b> → <b>Penerbitan Komisi</b>.
+          Simulasi alur lengkap: <b>Naufal (Affiliate)</b> → <b>Suyadi (Calon Peserta)</b> → <b>Pendaftaran</b> → <b>Pelunasan</b> → <b>Penerbitan & Pembayaran Komisi</b>.
         </p>
       </div>
 
@@ -174,7 +175,7 @@ export default function DemoGuidedExperience({
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Buka Halaman Pendaftaran</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Pastikan banner <i>"Direkomendasikan oleh Naufal Nabila"</i> tampil secara otomatis.
+                Pastikan banner <i>"Direkomendasikan oleh Naufal Nabila"</i> tampil secara otomatis pada form pendaftaran publik.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>
@@ -212,7 +213,7 @@ export default function DemoGuidedExperience({
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Daftarkan Calon Peserta Demo</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Kirim formulir pendaftaran baru untuk melihat atribusi sumber referral tercatat langsung.
+                Kirim formulir pendaftaran baru untuk melihat atribusi sumber referral tercatat langsung di sistem.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>
@@ -248,7 +249,7 @@ export default function DemoGuidedExperience({
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Lihat Suyadi di Dashboard Admin</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Buka detail lead Suyadi untuk memeriksa informasi kontak, pilihan program, dan riwayat aktivitas.
+                Buka detail lead Suyadi untuk memeriksa informasi kontak, pilihan program, dan riwayat timeline aktivitas.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>
@@ -287,7 +288,7 @@ export default function DemoGuidedExperience({
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Verifikasi Pembayaran Menjadi Lunas</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Ubah status menjadi <b>LUNAS</b> di panel kontrol lead. Ini otomatis memicu pencatatan komisi untuk Naufal.
+                Ubah status menjadi <b>LUNAS</b> di panel kontrol lead. Ini otomatis memicu pencatatan hak komisi Rp75.000 untuk Naufal.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>
@@ -296,7 +297,7 @@ export default function DemoGuidedExperience({
                 className="btn"
                 style={{ fontSize: 13, padding: "8px 14px" }}
               >
-                {summary.suyadiStatus === "LUNAS" ? "Lihat Status Lunas" : "Verifikasi Lunas"}
+                {summary.isSuyadiLunas ? "Lihat Status Lunas" : "Verifikasi Lunas"}
               </Link>
             </div>
           </div>
@@ -314,15 +315,19 @@ export default function DemoGuidedExperience({
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 <span className="eyebrow" style={{ fontSize: 11 }}>LANGKAH 6</span>
-                {step6Complete && (
+                {step6Complete ? (
                   <span className="small" style={{ color: "#167043", display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 700 }}>
-                    <Check size={14} /> Komisi Terbit
+                    <Check size={14} /> Komisi Sudah Dibayar
                   </span>
-                )}
+                ) : summary.isCommissionApproved ? (
+                  <span className="small" style={{ color: "#8b6828", display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 700 }}>
+                    Disetujui · Siap Ditransfer
+                  </span>
+                ) : null}
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Setujui & Tandai Komisi Dibayar</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Buka halaman Komisi Admin, periksa nominal komisi Naufal, lalu klik <b>Tandai Dibayar</b>.
+                Buka Komisi Admin: Setujui komisi yang berstatus PENDING, lalu klik <b>Tandai Dibayar</b> saat dana telah ditransfer.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>
@@ -357,7 +362,7 @@ export default function DemoGuidedExperience({
               </div>
               <h2 style={{ fontSize: 18, margin: "2px 0 6px" }}>Kembali ke Portal Affiliate Naufal</h2>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Verifikasi bahwa total komisi sudah bertambah dan status peserta telah terupdate di portal mitra.
+                Verifikasi bahwa total komisi sudah bertambah dan status peserta telah terupdate di dashboard portal mitra.
               </p>
             </div>
             <div style={{ flexShrink: 0, marginTop: 4 }}>

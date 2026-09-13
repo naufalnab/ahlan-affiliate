@@ -1,5 +1,6 @@
 import { getRepository } from "@/lib/repository";
 import { date, money } from "@/lib/format";
+import { labels } from "@/lib/domain";
 import { AdminShell } from "@/components/ui";
 import CommissionActions from "./commission-actions";
 
@@ -9,8 +10,9 @@ export default async function Commissions() {
   const repo = await getRepository();
   const commissions = await repo.getCommissions();
 
-  const total = commissions.reduce((sum, c) => sum + c.amount, 0);
-  const pending = commissions.filter((c) => c.status !== "PAID").reduce((sum, c) => sum + c.amount, 0);
+  const total = commissions.filter((c) => c.status !== "CANCELLED").reduce((sum, c) => sum + c.amount, 0);
+  const pending = commissions.filter((c) => c.status === "PENDING").reduce((sum, c) => sum + c.amount, 0);
+  const approved = commissions.filter((c) => c.status === "APPROVED").reduce((sum, c) => sum + c.amount, 0);
   const paid = commissions.filter((c) => c.status === "PAID").reduce((sum, c) => sum + c.amount, 0);
 
   return (
@@ -18,17 +20,21 @@ export default async function Commissions() {
       <div className="pagehead">
         <p className="eyebrow">Pembayaran mitra</p>
         <h1>Komisi Affiliate ({commissions.length})</h1>
-        <p className="muted">Setujui dan catat pembayaran komisi secara transparan.</p>
+        <p className="muted">Setujui hak komisi referral dan catat penyaluran dana komisi secara transparan.</p>
       </div>
 
-      <div className="grid kpis" style={{ marginBottom: 20 }}>
+      <div className="grid kpis" style={{ marginBottom: 20, gridTemplateColumns: "repeat(4, 1fr)" }}>
         <div className="card kpi">
           <p className="muted">Total Komisi Terbit</p>
           <p className="metric">{money(total)}</p>
         </div>
         <div className="card kpi">
-          <p className="muted">Pending / Menunggu Pembayaran</p>
+          <p className="muted">Menunggu Persetujuan</p>
           <p className="metric" style={{ color: "#916316" }}>{money(pending)}</p>
+        </div>
+        <div className="card kpi">
+          <p className="muted">Siap Dibayar (Disetujui)</p>
+          <p className="metric" style={{ color: "#8b6828" }}>{money(approved)}</p>
         </div>
         <div className="card kpi">
           <p className="muted">Sudah Ditransfer</p>
@@ -55,15 +61,29 @@ export default async function Commissions() {
                 <td>
                   <b>{c.affiliate?.name || "Affiliate"}</b>
                   <br />
-                  <span className="small muted">Kode: {c.affiliate?.code}</span>
+                  <span className="small muted">Kode: <code>{c.affiliate?.code}</code></span>
                 </td>
                 <td>{c.lead?.name || "Calon Peserta"}</td>
                 <td>{c.lead?.program?.name || "Program Ahlan"}</td>
-                <td><b>{money(c.amount)}</b></td>
-                <td>{date(c.generatedAt)}</td>
+                <td>
+                  <b>{money(c.amount)}</b>
+                </td>
+                <td>
+                  {date(c.generatedAt)}
+                  {c.approvedAt && (
+                    <span className="small muted" style={{ display: "block" }}>
+                      Disetujui: {date(c.approvedAt)}
+                    </span>
+                  )}
+                  {c.paidAt && (
+                    <span className="small muted" style={{ display: "block", color: "#167043" }}>
+                      Dibayar: {date(c.paidAt)}
+                    </span>
+                  )}
+                </td>
                 <td>
                   <span className={`badge ${c.status}`}>
-                    {c.status === "PAID" ? "SUDAH DIBAYAR" : c.status === "APPROVED" ? "DISETUJUI" : "PENDING"}
+                    {labels[c.status] || c.status}
                   </span>
                 </td>
                 <td>

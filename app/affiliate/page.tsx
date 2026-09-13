@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getRepository } from "@/lib/repository";
 import { appUrl, date, money } from "@/lib/format";
-import { labels } from "@/lib/domain";
+import { labels, maskPhone } from "@/lib/domain";
 import { CopyButton, ResetDemoButton } from "@/components/ui";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -79,7 +79,7 @@ export default async function Affiliate() {
               <a
                 className="btn"
                 href={`https://wa.me/?text=${encodeURIComponent(
-                  `Assalamu’alaikum, daftar kursus Bahasa Arab di Ahlan melalui link rekomendasi saya: ${url}`
+                  `Bismillah, jika sedang mencari kelas Bahasa Arab, bisa melihat program Ahlan melalui tautan ini: ${url}`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -113,13 +113,12 @@ export default async function Affiliate() {
               <tbody>
                 {leads.map((l) => {
                   const comm = l.commissions?.[0] || commissions.find((c) => c.leadId === l.id);
-                  const maskedPhone = l.phone.length > 4 ? `••••${l.phone.slice(-4)}` : l.phone;
                   return (
                     <tr key={l.id}>
                       <td>
                         <b>{l.name}</b>
                         <br />
-                        <span className="small muted">0812{maskedPhone}</span>
+                        <span className="small muted">{maskPhone(l.phone)}</span>
                       </td>
                       <td>{l.program?.name || "Program Ahlan"}</td>
                       <td>{date(l.createdAt)}</td>
@@ -128,8 +127,13 @@ export default async function Affiliate() {
                       </td>
                       <td>
                         {comm ? (
-                          <span style={{ fontWeight: 700, color: comm.status === "PAID" ? "#167043" : "#8b6828" }}>
-                            {money(comm.amount)} ({comm.status === "PAID" ? "Dibayar" : "Pending"})
+                          <span
+                            style={{
+                              fontWeight: 700,
+                              color: comm.status === "PAID" ? "#167043" : comm.status === "APPROVED" ? "#8b6828" : "#916316",
+                            }}
+                          >
+                            {money(comm.amount)} ({labels[comm.status] || comm.status})
                           </span>
                         ) : (
                           <span className="muted">Menunggu Lunas</span>

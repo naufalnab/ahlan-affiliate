@@ -86,14 +86,18 @@ export interface AffiliateRepository {
     totalLeads: number;
     paidLeads: number;
     conversionRate: number;
+    totalCommission: number;
     pendingCommission: number;
+    approvedCommission: number;
     paidCommission: number;
+    revenue: number;
+    netRevenue: number;
     recentLeads: Lead[];
   }>;
   getAffiliates(): Promise<Array<Affiliate & { leads: Lead[] }>>;
   getAffiliateById(id: string): Promise<(Affiliate & { leads: Lead[]; commissions: Commission[] }) | null>;
   getAffiliateByCode(code: string): Promise<Affiliate | null>;
-  getLeads(filters?: { search?: string; programId?: string; status?: string }): Promise<Lead[]>;
+  getLeads(filters?: { search?: string; programId?: string; affiliateId?: string; status?: string }): Promise<Lead[]>;
   getLeadById(id: string): Promise<Lead | null>;
   getCommissions(): Promise<Commission[]>;
   getPrograms(): Promise<Program[]>;
@@ -106,6 +110,9 @@ export interface AffiliateRepository {
     conversionRate: number;
     revenue: number;
     affiliateCost: number;
+    pendingCost: number;
+    approvedCost: number;
+    paidCost: number;
     netRevenue: number;
   }>;
   getAffiliatePortal(code: string): Promise<{
@@ -113,14 +120,17 @@ export interface AffiliateRepository {
     leads: Lead[];
     commissions: Commission[];
     totalCommission: number;
+    pendingCommission: number;
+    paidCommission: number;
     registeredCount: number;
     paidCount: number;
   } | null>;
   createLead(data: CreateLeadInput): Promise<{ ok: boolean; leadId?: string; error?: string }>;
   updateLeadStatus(id: string, status: LeadStatus): Promise<{ ok: boolean; commissionCreated?: boolean; commissionAmount?: number }>;
   updateLeadValue(id: string, value: number): Promise<{ ok: boolean }>;
-  updateCommissionStatus(id: string, status: string): Promise<{ ok: boolean }>;
-  payCommission(id: string): Promise<{ ok: boolean }>;
+  approveCommission(id: string): Promise<{ ok: boolean; error?: string }>;
+  payCommission(id: string): Promise<{ ok: boolean; error?: string }>;
+  updateCommissionStatus(id: string, status: string): Promise<{ ok: boolean; error?: string }>;
   createAffiliate(data: { name: string; code: string; phone?: string | null }): Promise<{ ok: boolean; error?: string }>;
   resetDemo(): Promise<{ ok: boolean }>;
 }

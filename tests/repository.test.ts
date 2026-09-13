@@ -106,16 +106,35 @@ describe("DemoRepository Business Flow & Data Integrity", () => {
       expect(leadComms2.length).toBe(1);
     });
 
-    it("allows updating commission status to PAID", async () => {
+    it("prevents directly marking PENDING commission as PAID", async () => {
       const comms = await repo.getCommissions();
       const pending = comms.find((c) => c.status === "PENDING");
       expect(pending).toBeDefined();
 
+      const directPayRes = await repo.payCommission(pending!.id);
+      expect(directPayRes.ok).toBe(false);
+      expect(directPayRes.error?.toLowerCase()).toContain("disetujui");
+    });
+
+    it("allows approving PENDING commission and then marking APPROVED commission as PAID", async () => {
+      const comms = await repo.getCommissions();
+      const pending = comms.find((c) => c.status === "PENDING");
+      expect(pending).toBeDefined();
+
+      // Step 1: Approve
+      const approveRes = await repo.approveCommission(pending!.id);
+      expect(approveRes.ok).toBe(true);
+
+      const approvedComms = await repo.getCommissions();
+      const approved = approvedComms.find((c) => c.id === pending!.id);
+      expect(approved?.status).toBe("APPROVED");
+
+      // Step 2: Pay
       const payRes = await repo.payCommission(pending!.id);
       expect(payRes.ok).toBe(true);
 
-      const updatedComms = await repo.getCommissions();
-      const paidComm = updatedComms.find((c) => c.id === pending!.id);
+      const finalComms = await repo.getCommissions();
+      const paidComm = finalComms.find((c) => c.id === pending!.id);
       expect(paidComm?.status).toBe("PAID");
     });
   });

@@ -1,9 +1,9 @@
 "use client";
 
-import { leadStatuses, type LeadStatus } from "@/lib/domain";
-import { payCommission, updateLeadStatus, updateLeadValue } from "@/server/actions";
+import { leadStatuses, labels, type LeadStatus } from "@/lib/domain";
+import { approveCommission, payCommission, updateLeadStatus, updateLeadValue } from "@/server/actions";
 import { useState } from "react";
-import { Check, CreditCard } from "lucide-react";
+import { Check, CheckCircle2, CreditCard, DollarSign } from "lucide-react";
 
 export default function LeadControls({
   id,
@@ -26,9 +26,9 @@ export default function LeadControls({
     setBusy(false);
     if (res?.ok) {
       if (res.commissionCreated) {
-        setSuccessMsg(`Status diperbarui ke LUNAS & Komisi Rp${res.commissionAmount?.toLocaleString("id-ID")} dibuat.`);
+        setSuccessMsg(`Status diperbarui ke LUNAS & Komisi Rp${res.commissionAmount?.toLocaleString("id-ID")} diterbitkan.`);
       } else {
-        setSuccessMsg(`Status diperbarui ke ${newStatus.replaceAll("_", " ")}.`);
+        setSuccessMsg(`Status diperbarui ke ${labels[newStatus] || newStatus}.`);
       }
       setTimeout(() => setSuccessMsg(""), 3500);
     }
@@ -57,7 +57,7 @@ export default function LeadControls({
         >
           {leadStatuses.map((s) => (
             <option key={s} value={s}>
-              {s.replaceAll("_", " ")}
+              {labels[s] || s.replaceAll("_", " ")}
             </option>
           ))}
         </select>
@@ -94,18 +94,53 @@ export default function LeadControls({
           className="notice"
           style={{
             marginTop: 18,
-            background: commission.status === "PAID" ? "#edf4ee" : "#fff2d8",
-            borderColor: commission.status === "PAID" ? "#cbe3d2" : "#f1deaf",
-            color: commission.status === "PAID" ? "#167043" : "#8b6828",
+            background:
+              commission.status === "PAID"
+                ? "#edf4ee"
+                : commission.status === "APPROVED"
+                ? "#fbf6e8"
+                : "#fff2d8",
+            borderColor:
+              commission.status === "PAID"
+                ? "#cbe3d2"
+                : commission.status === "APPROVED"
+                ? "#e8d8b2"
+                : "#f1deaf",
+            color:
+              commission.status === "PAID"
+                ? "#167043"
+                : commission.status === "APPROVED"
+                ? "#73561d"
+                : "#8b6828",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <div>
               <b>Komisi Rp{commission.amount.toLocaleString("id-ID")}</b>
               <br />
-              <span style={{ fontSize: 12 }}>Status: <b>{commission.status === "PAID" ? "SUDAH DIBAYAR" : "PENDING"}</b></span>
+              <span style={{ fontSize: 12 }}>
+                Status: <b>{labels[commission.status] || commission.status}</b>
+              </span>
             </div>
-            {commission.status !== "PAID" && (
+
+            {commission.status === "PENDING" && (
+              <button
+                type="button"
+                className="btn"
+                style={{ padding: "7px 12px", fontSize: 12 }}
+                onClick={async () => {
+                  setBusy(true);
+                  await approveCommission(commission.id);
+                  setBusy(false);
+                }}
+                disabled={busy}
+              >
+                <CheckCircle2 size={13} />
+                Setujui Komisi
+              </button>
+            )}
+
+            {commission.status === "APPROVED" && (
               <button
                 type="button"
                 className="btn gold"
@@ -117,14 +152,21 @@ export default function LeadControls({
                 }}
                 disabled={busy}
               >
+                <DollarSign size={13} />
                 Tandai Dibayar
               </button>
+            )}
+
+            {commission.status === "PAID" && (
+              <span className="badge PAID" style={{ padding: "5px 10px", fontSize: 11 }}>
+                <Check size={12} /> Selesai
+              </span>
             )}
           </div>
         </div>
       ) : (
         <p className="muted" style={{ fontSize: 12, marginTop: 14 }}>
-          Komisi akan otomatis terbit begitu calon peserta diubah menjadi status <b>LUNAS</b>.
+          Komisi akan otomatis terbit begitu calon peserta diubah menjadi status <b>Lunas</b>.
         </p>
       )}
     </section>

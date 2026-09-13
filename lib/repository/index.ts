@@ -16,8 +16,14 @@ import {
 } from "../seed-data";
 import {
   calculateCommission,
-  conversion,
   normalizePhone,
+  calculateTotalReferralRevenue,
+  calculateGeneratedCommission,
+  calculatePendingCommission,
+  calculateApprovedCommission,
+  calculatePaidCommission,
+  calculateNetReferralRevenue,
+  calculateConversionRate,
   type LeadStatus,
 } from "../domain";
 
@@ -75,7 +81,7 @@ export async function saveDemoCookieDelta(delta: DemoSessionDelta | null): Promi
       });
     }
   } catch {
-    // Outside request context (e.g. tests), inMemoryDelta handles it
+    // Outside request context, inMemoryDelta handles it
   }
 }
 
@@ -141,23 +147,30 @@ export class DemoRepository implements AffiliateRepository {
   }
 
   async getOverview() {
-    const { affiliates, leads, commissions } = await this.loadState();
+    const { affiliates, leads, commissions, programs } = await this.loadState();
     const paidLeads = leads.filter((l) => l.status === "LUNAS").length;
     const totalLeads = leads.length;
-    const pendingCommission = commissions
-      .filter((c) => c.status !== "PAID" && c.status !== "CANCELLED")
-      .reduce((sum, c) => sum + c.amount, 0);
-    const paidCommission = commissions
-      .filter((c) => c.status === "PAID")
-      .reduce((sum, c) => sum + c.amount, 0);
+    const conversionRate = calculateConversionRate(paidLeads, totalLeads);
+
+    const programsById = Object.fromEntries(programs.map((p) => [p.id, p]));
+    const revenue = calculateTotalReferralRevenue(leads, programsById);
+    const totalCommission = calculateGeneratedCommission(commissions);
+    const pendingCommission = calculatePendingCommission(commissions);
+    const approvedCommission = calculateApprovedCommission(commissions);
+    const paidCommission = calculatePaidCommission(commissions);
+    const netRevenue = calculateNetReferralRevenue(revenue, totalCommission);
 
     return {
       totalAffiliates: affiliates.length,
       totalLeads,
       paidLeads,
-      conversionRate: conversion(paidLeads, totalLeads),
+      conversionRate,
+      totalCommission,
       pendingCommission,
+      approvedCommission,
       paidCommission,
+      revenue,
+      netRevenue,
       recentLeads: leads.slice(0, 6),
     };
   }
@@ -188,17 +201,20 @@ export class DemoRepository implements AffiliateRepository {
     return affiliates.find((a) => a.code.toUpperCase() === clean && a.isActive) || null;
   }
 
-  async getLeads(filters?: { search?: string; programId?: string; status?: string }) {
+  async getLeads(filters?: { search?: string; programId?: string; affiliateId?: string; status?: string }) {
     const { leads } = await this.loadState();
     let result = leads;
     if (filters?.programId && filters.programId !== "Semua program") {
       result = result.filter((l) => l.programId === filters.programId || l.program?.name === filters.programId);
     }
+    if (filters?.affiliateId && filters.affiliateId !== "Semua affiliate") {
+      result = result.filter((l) => l.affiliateId === filters.affiliateId || l.affiliate?.name === filters.affiliateId);
+    }
     if (filters?.status && filters.status !== "Semua status") {
       result = result.filter((l) => l.status === filters.status || l.status.replaceAll("_", " ") === filters.status);
     }
     if (filters?.search) {
-      const s = filters.search.toLowerCase();
+      const s = filters.search.toLowerCase().trim();
       result = result.filter((l) => l.name.toLowerCase().includes(s) || l.phone.includes(s));
     }
     return result;
@@ -230,19 +246,29 @@ export class DemoRepository implements AffiliateRepository {
   }
 
   async getManagementMetrics() {
-    const { affiliates, leads, commissions } = await this.loadState();
+    const { affiliates, leads, commissions, programs } = await this.loadState();
     const paidList = leads.filter((l) => l.status === "LUNAS");
-    const revenue = paidList.reduce((sum, l) => sum + (l.registrationValue || l.program?.price || 500000), 0);
-    const affiliateCost = commissions.reduce((sum, c) => sum + c.amount, 0);
+    const conversionRate = calculateConversionRate(paidList.length, leads.length);
+
+    const programsById = Object.fromEntries(programs.map((p) => [p.id, p]));
+    const revenue = calculateTotalReferralRevenue(leads, programsById);
+    const affiliateCost = calculateGeneratedCommission(commissions);
+    const pendingCost = calculatePendingCommission(commissions);
+    const approvedCost = calculateApprovedCommission(commissions);
+    const paidCost = calculatePaidCommission(commissions);
+    const netRevenue = calculateNetReferralRevenue(revenue, affiliateCost);
 
     return {
       affiliatesCount: affiliates.length,
       leadsCount: leads.length,
       paidCount: paidList.length,
-      conversionRate: conversion(paidList.length, leads.length),
+      conversionRate,
       revenue,
       affiliateCost,
-      netRevenue: revenue - affiliateCost,
+      pendingCost,
+      approvedCost,
+      paidCost,
+      netRevenue,
     };
   }
 
@@ -256,13 +282,18 @@ export class DemoRepository implements AffiliateRepository {
       ["DAFTAR", "MENUNGGU_PEMBAYARAN", "LUNAS"].includes(l.status)
     ).length;
     const paidCount = affLeads.filter((l) => l.status === "LUNAS").length;
-    const totalCommission = affCommissions.reduce((sum, c) => sum + c.amount, 0);
+
+    const totalCommission = calculateGeneratedCommission(affCommissions);
+    const pendingCommission = calculatePendingCommission(affCommissions);
+    const paidCommission = calculatePaidCommission(affCommissions);
 
     return {
       affiliate: aff,
       leads: affLeads,
       commissions: affCommissions,
       totalCommission,
+      pendingCommission,
+      paidCommission,
       registeredCount,
       paidCount,
     };
@@ -338,14 +369,17 @@ export class DemoRepository implements AffiliateRepository {
       id: `act-status-${Date.now()}`,
       leadId: id,
       type: "STATUS",
-      message: `Admin mengubah status menjadi ${status.replaceAll("_", " ")}`,
+      message:
+        status === "LUNAS"
+          ? "Status diperbarui menjadi Lunas (Pembayaran Diverifikasi)"
+          : `Admin mengubah status menjadi ${status.replaceAll("_", " ")}`,
       createdAt: now,
     });
 
     let commissionCreated = false;
     let commissionAmount = 0;
 
-    // Check duplicate commission: only create if status is LUNAS, lead has an affiliate, and no commission exists yet
+    // Duplicate commission check: only create if status is LUNAS, lead has an affiliate, and no commission exists yet
     const { commissions, setting } = await this.loadState();
     const hasCommission = commissions.some((c) => c.leadId === id);
 
@@ -372,7 +406,7 @@ export class DemoRepository implements AffiliateRepository {
         id: `act-comm-${Date.now()}`,
         leadId: id,
         type: "COMMISSION",
-        message: `Komisi Rp${commissionAmount.toLocaleString("id-ID")} dibuat untuk ${lead.affiliate?.name || "Affiliate"}`,
+        message: `Komisi Rp${commissionAmount.toLocaleString("id-ID")} diterbitkan untuk ${lead.affiliate?.name || "Affiliate"} (Menunggu Persetujuan)`,
         createdAt: now,
       });
       commissionCreated = true;
@@ -404,24 +438,92 @@ export class DemoRepository implements AffiliateRepository {
     return { ok: true };
   }
 
-  async updateCommissionStatus(id: string, status: string) {
+  async approveCommission(id: string) {
+    const { commissions } = await this.loadState();
+    const comm = commissions.find((c) => c.id === id);
+    if (!comm) return { ok: false, error: "Komisi tidak ditemukan." };
+    if (comm.status !== "PENDING") {
+      return { ok: false, error: "Hanya komisi dengan status Menunggu Persetujuan yang dapat disetujui." };
+    }
+
     const delta = await getDemoCookieDelta();
     delta.modifiedCommissions = delta.modifiedCommissions || {};
     const now = new Date().toISOString();
-    const patch: Partial<Commission> = {
+    delta.modifiedCommissions[id] = {
       ...(delta.modifiedCommissions[id] || {}),
-      status,
+      status: "APPROVED",
+      approvedAt: now,
     };
-    if (status === "APPROVED") patch.approvedAt = now;
-    if (status === "PAID") patch.paidAt = now;
 
-    delta.modifiedCommissions[id] = patch;
+    if (comm.leadId) {
+      delta.extraActivities = delta.extraActivities || {};
+      delta.extraActivities[comm.leadId] = delta.extraActivities[comm.leadId] || [];
+      delta.extraActivities[comm.leadId].unshift({
+        id: `act-comm-appr-${Date.now()}`,
+        leadId: comm.leadId,
+        type: "COMMISSION",
+        message: `Komisi Rp${comm.amount.toLocaleString("id-ID")} disetujui oleh admin`,
+        createdAt: now,
+      });
+    }
+
     await saveDemoCookieDelta(delta);
     return { ok: true };
   }
 
   async payCommission(id: string) {
-    return this.updateCommissionStatus(id, "PAID");
+    const { commissions } = await this.loadState();
+    const comm = commissions.find((c) => c.id === id);
+    if (!comm) return { ok: false, error: "Komisi tidak ditemukan." };
+
+    // Enforce state machine rule: PENDING cannot be directly marked PAID without approval!
+    if (comm.status === "PENDING") {
+      return { ok: false, error: "Komisi harus disetujui terlebih dahulu sebelum ditandai dibayar." };
+    }
+    if (comm.status === "PAID") {
+      return { ok: true };
+    }
+
+    const delta = await getDemoCookieDelta();
+    delta.modifiedCommissions = delta.modifiedCommissions || {};
+    const now = new Date().toISOString();
+    delta.modifiedCommissions[id] = {
+      ...(delta.modifiedCommissions[id] || {}),
+      status: "PAID",
+      paidAt: now,
+    };
+
+    if (comm.leadId) {
+      delta.extraActivities = delta.extraActivities || {};
+      delta.extraActivities[comm.leadId] = delta.extraActivities[comm.leadId] || [];
+      delta.extraActivities[comm.leadId].unshift({
+        id: `act-comm-paid-${Date.now()}`,
+        leadId: comm.leadId,
+        type: "PAYMENT",
+        message: `Komisi Rp${comm.amount.toLocaleString("id-ID")} ditandai sudah dibayar`,
+        createdAt: now,
+      });
+    }
+
+    await saveDemoCookieDelta(delta);
+    return { ok: true };
+  }
+
+  async updateCommissionStatus(id: string, status: string) {
+    if (status === "APPROVED") {
+      return this.approveCommission(id);
+    }
+    if (status === "PAID") {
+      return this.payCommission(id);
+    }
+    const delta = await getDemoCookieDelta();
+    delta.modifiedCommissions = delta.modifiedCommissions || {};
+    delta.modifiedCommissions[id] = {
+      ...(delta.modifiedCommissions[id] || {}),
+      status,
+    };
+    await saveDemoCookieDelta(delta);
+    return { ok: true };
   }
 
   async createAffiliate(data: { name: string; code: string; phone?: string | null }) {
@@ -501,32 +603,40 @@ export class DatabaseRepository implements AffiliateRepository {
 
   async getOverview() {
     await this.ensureSeeded();
-    const [totalAffiliates, totalLeads, paidLeads, commissions, recentLeads] = await Promise.all([
-      this.prisma.affiliate.count(),
-      this.prisma.lead.count(),
-      this.prisma.lead.count({ where: { status: "LUNAS" } }),
-      this.prisma.commission.findMany(),
-      this.prisma.lead.findMany({
-        include: { program: true, affiliate: true },
-        orderBy: { createdAt: "desc" },
-        take: 6,
-      }),
-    ]);
+    const [totalAffiliates, totalLeads, paidLeads, commissions, recentLeads, programs, allLeads] =
+      await Promise.all([
+        this.prisma.affiliate.count(),
+        this.prisma.lead.count(),
+        this.prisma.lead.count({ where: { status: "LUNAS" } }),
+        this.prisma.commission.findMany(),
+        this.prisma.lead.findMany({
+          include: { program: true, affiliate: true },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        }),
+        this.prisma.program.findMany(),
+        this.prisma.lead.findMany({ include: { program: true } }),
+      ]);
 
-    const pendingCommission = commissions
-      .filter((c: any) => c.status !== "PAID" && c.status !== "CANCELLED")
-      .reduce((sum: number, c: any) => sum + c.amount, 0);
-    const paidCommission = commissions
-      .filter((c: any) => c.status === "PAID")
-      .reduce((sum: number, c: any) => sum + c.amount, 0);
+    const programsById = Object.fromEntries(programs.map((p: any) => [p.id, p]));
+    const revenue = calculateTotalReferralRevenue(allLeads, programsById);
+    const totalCommission = calculateGeneratedCommission(commissions);
+    const pendingCommission = calculatePendingCommission(commissions);
+    const approvedCommission = calculateApprovedCommission(commissions);
+    const paidCommission = calculatePaidCommission(commissions);
+    const netRevenue = calculateNetReferralRevenue(revenue, totalCommission);
 
     return {
       totalAffiliates,
       totalLeads,
       paidLeads,
-      conversionRate: conversion(paidLeads, totalLeads),
+      conversionRate: calculateConversionRate(paidLeads, totalLeads),
+      totalCommission,
       pendingCommission,
+      approvedCommission,
       paidCommission,
+      revenue,
+      netRevenue,
       recentLeads,
     };
   }
@@ -558,11 +668,14 @@ export class DatabaseRepository implements AffiliateRepository {
     });
   }
 
-  async getLeads(filters?: { search?: string; programId?: string; status?: string }) {
+  async getLeads(filters?: { search?: string; programId?: string; affiliateId?: string; status?: string }) {
     await this.ensureSeeded();
     const where: any = {};
     if (filters?.programId && filters.programId !== "Semua program") {
       where.programId = filters.programId;
+    }
+    if (filters?.affiliateId && filters.affiliateId !== "Semua affiliate") {
+      where.affiliateId = filters.affiliateId;
     }
     if (filters?.status && filters.status !== "Semua status") {
       where.status = filters.status;
@@ -619,26 +732,33 @@ export class DatabaseRepository implements AffiliateRepository {
 
   async getManagementMetrics() {
     await this.ensureSeeded();
-    const [affiliatesCount, leadsCount, paidLeads, commissions] = await Promise.all([
+    const [affiliatesCount, leadsCount, paidLeads, commissions, programs] = await Promise.all([
       this.prisma.affiliate.count(),
       this.prisma.lead.count(),
       this.prisma.lead.findMany({ where: { status: "LUNAS" }, include: { program: true } }),
       this.prisma.commission.findMany(),
+      this.prisma.program.findMany(),
     ]);
-    const revenue = paidLeads.reduce(
-      (sum: number, x: any) => sum + (x.registrationValue || x.program?.price || 500000),
-      0
-    );
-    const affiliateCost = commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
+
+    const programsById = Object.fromEntries(programs.map((p: any) => [p.id, p]));
+    const revenue = calculateTotalReferralRevenue(paidLeads, programsById);
+    const affiliateCost = calculateGeneratedCommission(commissions);
+    const pendingCost = calculatePendingCommission(commissions);
+    const approvedCost = calculateApprovedCommission(commissions);
+    const paidCost = calculatePaidCommission(commissions);
+    const netRevenue = calculateNetReferralRevenue(revenue, affiliateCost);
 
     return {
       affiliatesCount,
       leadsCount,
       paidCount: paidLeads.length,
-      conversionRate: conversion(paidLeads.length, leadsCount),
+      conversionRate: calculateConversionRate(paidLeads.length, leadsCount),
       revenue,
       affiliateCost,
-      netRevenue: revenue - affiliateCost,
+      pendingCost,
+      approvedCost,
+      paidCost,
+      netRevenue,
     };
   }
 
@@ -657,13 +777,17 @@ export class DatabaseRepository implements AffiliateRepository {
       ["DAFTAR", "MENUNGGU_PEMBAYARAN", "LUNAS"].includes(l.status)
     ).length;
     const paidCount = aff.leads.filter((l: any) => l.status === "LUNAS").length;
-    const totalCommission = aff.commissions.reduce((sum: number, c: any) => sum + c.amount, 0);
+    const totalCommission = calculateGeneratedCommission(aff.commissions);
+    const pendingCommission = calculatePendingCommission(aff.commissions);
+    const paidCommission = calculatePaidCommission(aff.commissions);
 
     return {
       affiliate: aff,
       leads: aff.leads,
       commissions: aff.commissions,
       totalCommission,
+      pendingCommission,
+      paidCommission,
       registeredCount,
       paidCount,
     };
@@ -728,7 +852,10 @@ export class DatabaseRepository implements AffiliateRepository {
         activities: {
           create: {
             type: "STATUS",
-            message: `Admin mengubah status menjadi ${status.replaceAll("_", " ")}`,
+            message:
+              status === "LUNAS"
+                ? "Status diperbarui menjadi Lunas (Pembayaran Diverifikasi)"
+                : `Admin mengubah status menjadi ${status.replaceAll("_", " ")}`,
           },
         },
       },
@@ -764,7 +891,7 @@ export class DatabaseRepository implements AffiliateRepository {
         data: {
           leadId: id,
           type: "COMMISSION",
-          message: `Komisi Rp${commissionAmount.toLocaleString("id-ID")} dibuat untuk ${lead.affiliate?.name}`,
+          message: `Komisi Rp${commissionAmount.toLocaleString("id-ID")} diterbitkan untuk ${lead.affiliate?.name} (Menunggu Persetujuan)`,
         },
       });
       commissionCreated = true;
@@ -790,21 +917,77 @@ export class DatabaseRepository implements AffiliateRepository {
     return { ok: true };
   }
 
-  async updateCommissionStatus(id: string, status: string) {
+  async approveCommission(id: string) {
     await this.ensureSeeded();
+    const comm = await this.prisma.commission.findUnique({ where: { id } });
+    if (!comm) return { ok: false, error: "Komisi tidak ditemukan." };
+    if (comm.status !== "PENDING") {
+      return { ok: false, error: "Hanya komisi dengan status Menunggu Persetujuan yang dapat disetujui." };
+    }
+
     await this.prisma.commission.update({
       where: { id },
       data: {
-        status,
-        approvedAt: status === "APPROVED" ? new Date() : undefined,
-        paidAt: status === "PAID" ? new Date() : undefined,
+        status: "APPROVED",
+        approvedAt: new Date(),
       },
     });
+
+    if (comm.leadId) {
+      await this.prisma.leadActivity.create({
+        data: {
+          leadId: comm.leadId,
+          type: "COMMISSION",
+          message: `Komisi Rp${comm.amount.toLocaleString("id-ID")} disetujui oleh admin`,
+        },
+      });
+    }
+
     return { ok: true };
   }
 
   async payCommission(id: string) {
-    return this.updateCommissionStatus(id, "PAID");
+    await this.ensureSeeded();
+    const comm = await this.prisma.commission.findUnique({ where: { id } });
+    if (!comm) return { ok: false, error: "Komisi tidak ditemukan." };
+    if (comm.status === "PENDING") {
+      return { ok: false, error: "Komisi harus disetujui terlebih dahulu sebelum ditandai dibayar." };
+    }
+
+    await this.prisma.commission.update({
+      where: { id },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+      },
+    });
+
+    if (comm.leadId) {
+      await this.prisma.leadActivity.create({
+        data: {
+          leadId: comm.leadId,
+          type: "PAYMENT",
+          message: `Komisi Rp${comm.amount.toLocaleString("id-ID")} ditandai sudah dibayar`,
+        },
+      });
+    }
+
+    return { ok: true };
+  }
+
+  async updateCommissionStatus(id: string, status: string) {
+    if (status === "APPROVED") {
+      return this.approveCommission(id);
+    }
+    if (status === "PAID") {
+      return this.payCommission(id);
+    }
+    await this.ensureSeeded();
+    await this.prisma.commission.update({
+      where: { id },
+      data: { status },
+    });
+    return { ok: true };
   }
 
   async createAffiliate(data: { name: string; code: string; phone?: string | null }) {
@@ -829,8 +1012,7 @@ export class DatabaseRepository implements AffiliateRepository {
   }
 }
 
-// Fallback Factory
-let cachedRepo: AffiliateRepository | null = null;
+// Factory
 let cachedMode: { mode: "production" | "demo"; database: "connected" | "demo" } = {
   mode: "demo",
   database: "demo",
@@ -857,7 +1039,6 @@ export async function getRepository(): Promise<AffiliateRepository> {
       cachedMode = { mode: "demo", database: "demo" };
       return new DemoRepository();
     }
-    // Test connection with a quick query
     await dbClient.affiliate.count();
     cachedMode = { mode: "production", database: "connected" };
     return new DatabaseRepository(dbClient);

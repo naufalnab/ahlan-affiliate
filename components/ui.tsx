@@ -147,18 +147,6 @@ export function AdminNav() {
           <Link href="/management/simulator">Simulator</Link>
           <Link href="/admin/settings/commission">Pengaturan</Link>
         </nav>
-        <div style={{ marginTop: "auto", paddingTop: 20 }}>
-          <Link
-            href="/demo"
-            className="btn alt"
-            style={{ width: "100%", boxSizing: "border-box", fontSize: 12, padding: "8px" }}
-          >
-            Panduan Demo
-          </Link>
-          <div style={{ marginTop: 8 }}>
-            <ResetDemoButton compact />
-          </div>
-        </div>
       </aside>
       <nav className="mobile-nav">
         <Link href="/admin">

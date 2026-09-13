@@ -79,6 +79,22 @@ export async function updateLeadValue(id: string, value: number) {
   }
 }
 
+export async function approveCommission(id: string) {
+  try {
+    const repo = await getRepository();
+    const res = await repo.approveCommission(id);
+
+    revalidatePath("/admin/commissions");
+    revalidatePath("/admin");
+    revalidatePath("/affiliate");
+    revalidatePath("/management");
+    return res;
+  } catch (e: any) {
+    console.error("approveCommission error:", e);
+    return { ok: false, error: "Gagal menyetujui komisi." };
+  }
+}
+
 export async function payCommission(id: string) {
   try {
     const repo = await getRepository();
@@ -152,3 +168,21 @@ export async function resetDemoAction() {
     return { ok: false, error: "Gagal mereset demo." };
   }
 }
+
+export async function setDemoRoleAction(role: "admin" | "affiliate" | "management") {
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    cookieStore.set("ahlan_demo_role", role, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: "lax",
+      httpOnly: false,
+    });
+    return { ok: true };
+  } catch (e) {
+    console.error("setDemoRoleAction error:", e);
+    return { ok: false };
+  }
+}
+
