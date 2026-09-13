@@ -9,9 +9,11 @@ import {
   Users,
 } from "lucide-react";
 
+import AhlanLogo from "@/components/brand/AhlanLogo";
+
 const steps = [
-  "Affiliate mendapatkan tautan referal unik (contoh: ref=NAUFAL)",
-  "Tautan dibagikan ke calon peserta melalui WhatsApp atau media sosial",
+  "Affiliate membagikan tautan unik berisi kode referral",
+  "Calon peserta mengisi form pendaftaran program Ahlan",
   "Pendaftaran dan sumber referal otomatis tercatat di dashboard",
   "Admin menindaklanjuti status peserta hingga komisi diterbitkan dan ditransfer",
 ];
@@ -20,8 +22,8 @@ export default function Home() {
   return (
     <>
       <header className="shell nav">
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan Affiliate" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
         </Link>
         <nav className="navlinks">
           <a href="#cara-kerja">Cara Kerja</a>

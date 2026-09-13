@@ -40,4 +40,4 @@ npm run build
 
 ## Deployment
 
-Set `NEXT_PUBLIC_APP_URL=https://domain-anda` dan `DATABASE_URL`. SQLite cocok untuk presentasi lokal; gunakan PostgreSQL untuk deployment persistent/serverless. Ganti `public/brand/logo-ahlan.svg` dengan logo resmi Ahlan sebelum peluncuran.
+Set `NEXT_PUBLIC_APP_URL=https://domain-anda` dan `DATABASE_URL`. SQLite cocok untuk presentasi lokal; gunakan PostgreSQL untuk deployment persistent/serverless. Logo resmi Ahlan tersimpan terpusat di `public/brand/ahlan-logo.png` dan dirender melalui komponen `components/brand/AhlanLogo.tsx`.

@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { ResetDemoModal } from "@/components/ui";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 interface DemoStateSummary {
   suyadiStatus: string;
@@ -66,8 +67,8 @@ export default function DemoGuidedExperience({
   return (
     <main className="shell section" style={{ maxWidth: 860, margin: "0 auto", paddingBottom: 60 }}>
       <header className="nav" style={{ marginBottom: 20 }}>
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
         </Link>
         <div className="actions">
           <button

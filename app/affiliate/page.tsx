@@ -4,6 +4,7 @@ import { appUrl, date, money } from "@/lib/format";
 import { labels, maskPhone } from "@/lib/domain";
 import { CopyButton, ResetDemoButton } from "@/components/ui";
 import { QRCodeSVG } from "qrcode.react";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,8 @@ export default async function Affiliate() {
   return (
     <main>
       <header className="shell nav">
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
         </Link>
         <div className="actions">
           <ResetDemoButton compact />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export default function ManagementError({
   error,
@@ -17,7 +18,9 @@ export default function ManagementError({
   return (
     <main className="shell section center">
       <header className="nav">
-        <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
+        </Link>
         <Link className="btn alt" href="/demo-login">Ganti Demo</Link>
       </header>
       <div className="card" style={{ padding: 32, textAlign: "center", marginTop: 24 }}>

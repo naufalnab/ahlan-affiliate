@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 import { money } from "@/lib/format";
 import { simulation } from "@/lib/domain";
 
@@ -39,8 +40,8 @@ export default function Simulator() {
   return (
     <main className="shell section center">
       <header className="nav">
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
         </Link>
         <Link className="btn alt" href="/management">
           Kembali ke Manajemen

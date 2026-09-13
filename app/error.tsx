@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export default function GlobalError({
   error,
@@ -15,8 +16,10 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <main className="shell section center" style={{ minHeight: "70vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" style={{ margin: "0 auto 16px" }} />
+    <main className="shell section center" style={{ minHeight: "70vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+      <div style={{ marginBottom: 16 }}>
+        <AhlanLogo size="lg" priority />
+      </div>
       <p className="eyebrow">Pemulihan Sistem</p>
       <h1>Halaman Belum Dapat Dimuat</h1>
       <p className="lead">

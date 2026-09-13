@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { resetDemoAction } from "@/server/actions";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export function CopyButton({ text, label = "Salin Link" }: { text: string; label?: string }) {
   const [ok, setOk] = useState(false);
@@ -132,8 +133,8 @@ export function AdminNav() {
   return (
     <>
       <aside className="side">
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan Affiliate" />
+        <Link href="/" aria-label="Beranda Ahlan" style={{ display: "inline-block", marginBottom: 6 }}>
+          <AhlanLogo size="md" onDark priority />
         </Link>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "10px 0 16px" }}>
           <p className="demo" style={{ margin: 0 }}>PROTOTYPE / DEMO</p>

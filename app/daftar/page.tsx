@@ -1,39 +1,34 @@
-import { getRepository } from "@/lib/repository";
-import RegisterForm from "./register-form";
 import Link from "next/link";
+import { getRepository } from "@/lib/repository";
+import AhlanLogo from "@/components/brand/AhlanLogo";
+import RegisterForm from "./register-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function Daftar({
+export default async function DaftarPage({
   searchParams,
 }: {
   searchParams: Promise<{ ref?: string }>;
 }) {
   const resolvedParams = await searchParams;
-  const rawRef = typeof resolvedParams?.ref === "string" ? resolvedParams.ref.trim() : undefined;
+  const rawRef = resolvedParams?.ref?.trim();
 
   let affiliate = null;
   let programs: any[] = [];
-
   try {
     const repo = await getRepository();
-    programs = await repo.getPrograms();
     if (rawRef) {
       affiliate = await repo.getAffiliateByCode(rawRef);
     }
+    programs = await repo.getPrograms();
   } catch (e) {
     console.error("Daftar page query error:", e);
   }
 
   return (
     <main className="shell section center">
-      <Link href="/">
-        <img
-          className="logo"
-          src="/brand/logo-ahlan.svg"
-          alt="Ahlan"
-          style={{ display: "block", margin: "0 auto 12px" }}
-        />
+      <Link href="/" aria-label="Beranda Ahlan" style={{ display: "inline-flex", justifyContent: "center", marginBottom: 12 }}>
+        <AhlanLogo size="lg" priority />
       </Link>
       <p className="eyebrow">Pendaftaran calon peserta</p>
       <h1>Mulai belajar Bahasa Arab bersama Ahlan</h1>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export default function AffiliateError({
   error,
@@ -17,7 +18,9 @@ export default function AffiliateError({
   return (
     <main>
       <header className="shell nav">
-        <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
+        </Link>
         <Link className="btn alt" href="/demo-login">Ganti Demo</Link>
       </header>
       <div className="shell section center">

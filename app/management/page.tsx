@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getRepository } from "@/lib/repository";
 import { money } from "@/lib/format";
 import { ResetDemoButton } from "@/components/ui";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,8 @@ export default async function Management() {
   return (
     <main className="shell section">
       <header className="nav">
-        <Link href="/">
-          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        <Link href="/" aria-label="Beranda Ahlan">
+          <AhlanLogo size="md" priority />
         </Link>
         <div className="actions">
           <ResetDemoButton compact />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AhlanLogo from "@/components/brand/AhlanLogo";
 import DemoLoginClient from "./demo-login-client";
 
 export const dynamic = "force-dynamic";
@@ -14,98 +15,152 @@ export default async function Login({
 
   return (
     <main
-      className="shell center section"
+      className="shell section"
       style={{
-        minHeight: "80vh",
+        minHeight: "85vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        paddingTop: 36,
-        paddingBottom: 40,
+        alignItems: "center",
+        paddingTop: 40,
+        paddingBottom: 48,
       }}
     >
-      <Link href="/" aria-label="Kembali ke Beranda Ahlan">
-        <img
-          className="logo"
-          src="/brand/logo-ahlan.svg"
-          alt="Ahlan Affiliate"
-          style={{
-            display: "block",
-            margin: "0 auto 12px",
-            width: 195,
-            maxWidth: "100%",
-            height: "auto",
-          }}
-        />
-      </Link>
-      <p className="eyebrow" style={{ margin: "0 0 6px" }}>
-        EKSPLORASI DEMO
-      </p>
-      <h1
+      <div
         style={{
-          fontSize: 30,
-          lineHeight: 1.25,
-          letterSpacing: "-0.02em",
-          margin: "0 0 10px",
-          fontWeight: 800,
+          width: "100%",
+          maxWidth: 720,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        Lihat Ahlan Affiliate dari Tiga Sudut Pandang
-      </h1>
-      <p
-        className="lead"
-        style={{
-          margin: "0 auto 18px",
-          maxWidth: 580,
-          fontSize: 15,
-          lineHeight: 1.6,
-          color: "#53665e",
-        }}
-      >
-        Jelajahi sistem sebagai Admin Ahlan, Affiliate, atau Manajemen. Tidak memerlukan akun atau kata sandi.
-      </p>
-
-      {/* Subtle Connected-Flow Indicator */}
-      <div className="flow-pill-container">
-        <span
-          className="eyebrow"
+        {/* ============================================================ */}
+        {/* INTRO SECTION: 100% CENTER-ALIGNED (Logo, Eyebrow, H1, Desc, Flow) */}
+        {/* ============================================================ */}
+        <header
           style={{
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            color: "#8b6828",
-            margin: 0,
-          }}
-        >
-          ALUR PROGRAM AFFILIATE
-        </span>
-        <div className="flow-pill-steps">
-          <span>Referral</span>
-          <span className="flow-pill-arrow">→</span>
-          <span>Pendaftaran</span>
-          <span className="flow-pill-arrow">→</span>
-          <span>Pembayaran</span>
-          <span className="flow-pill-arrow">→</span>
-          <span>Komisi</span>
-          <span className="flow-pill-arrow">→</span>
-          <span>Analitik</span>
-        </div>
-      </div>
-
-      <DemoLoginClient nextPath={nextPath} requiredRole={requiredRole} />
-
-      <div style={{ marginTop: 22 }}>
-        <Link
-          href="/demo"
-          className="small muted"
-          style={{
-            display: "inline-flex",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 4,
-            transition: "color 150ms ease",
+            width: "100%",
           }}
         >
-          ← Kembali ke Panduan Demo
-        </Link>
+          <Link
+            href="/"
+            aria-label="Kembali ke Beranda Ahlan"
+            style={{
+              display: "inline-flex",
+              justifyContent: "center",
+              marginBottom: 14,
+            }}
+          >
+            <AhlanLogo size="lg" priority />
+          </Link>
+
+          <p
+            className="eyebrow"
+            style={{
+              textAlign: "center",
+              margin: "0 0 8px",
+              color: "#8b6828",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+            }}
+          >
+            EKSPLORASI DEMO
+          </p>
+
+          <h1
+            style={{
+              fontSize: "clamp(26px, 4vw, 34px)",
+              lineHeight: 1.25,
+              letterSpacing: "-0.025em",
+              margin: "0 auto 12px",
+              fontWeight: 800,
+              color: "#193830",
+              textAlign: "center",
+              maxWidth: 580,
+            }}
+          >
+            Lihat Ahlan Affiliate dari
+            <br />
+            Tiga Sudut Pandang
+          </h1>
+
+          <p
+            className="lead"
+            style={{
+              margin: "0 auto 20px",
+              maxWidth: 540,
+              fontSize: 15.5,
+              lineHeight: 1.6,
+              color: "#53665e",
+              textAlign: "center",
+            }}
+          >
+            Jelajahi sistem sebagai Admin Ahlan, Affiliate, atau Manajemen.
+            <br />
+            Tidak memerlukan akun atau kata sandi.
+          </p>
+
+          {/* Connected-Flow Indicator: Centered */}
+          <div
+            className="flow-pill-container"
+            style={{
+              margin: "0 auto 24px",
+              textAlign: "center",
+            }}
+          >
+            <span
+              className="eyebrow"
+              style={{
+                fontSize: 11,
+                letterSpacing: "0.08em",
+                color: "#8b6828",
+                margin: 0,
+                textAlign: "center",
+              }}
+            >
+              ALUR PROGRAM AFFILIATE
+            </span>
+            <div className="flow-pill-steps">
+              <span>Referral</span>
+              <span className="flow-pill-arrow">→</span>
+              <span>Pendaftaran</span>
+              <span className="flow-pill-arrow">→</span>
+              <span>Pembayaran</span>
+              <span className="flow-pill-arrow">→</span>
+              <span>Komisi</span>
+              <span className="flow-pill-arrow">→</span>
+              <span>Analitik</span>
+            </div>
+          </div>
+        </header>
+
+        {/* ============================================================ */}
+        {/* ROLE CARDS: 100% LEFT-ALIGNED INTERNAL CONTENT               */}
+        {/* ============================================================ */}
+        <DemoLoginClient nextPath={nextPath} requiredRole={requiredRole} />
+
+        <div style={{ marginTop: 24, textAlign: "center" }}>
+          <Link
+            href="/demo"
+            className="small muted"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              transition: "color 150ms ease",
+              fontSize: 13,
+            }}
+          >
+            ← Kembali ke Panduan Demo
+          </Link>
+        </div>
       </div>
     </main>
   );
