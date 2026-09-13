@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+
+
+model Affiliate {
+  id String @id @default(cuid())
+  name String
+  code String @unique
+  phone String?
+  email String?
+  isActive Boolean @default(true)
+  clicks Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads Lead[]
+  commissions Commission[]
+  clicksLog ReferralClick[]
+}
+model Program {
+  id String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  description String
+  price Int
+  commissionOverride Int?
+  active Boolean @default(true)
+  leads Lead[]
+}
+model Lead {
+  id String @id @default(cuid())
+  name String
+  phone String
+  city String
+  notes String?
+  source String @default("DIRECT")
+  status String @default("LEAD_BARU")
+  registrationValue Int?
+  paymentVerifiedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  programId String
+  affiliateId String?
+  program Program @relation(fields:[programId], references:[id])
+  affiliate Affiliate? @relation(fields:[affiliateId], references:[id])
+  activities LeadActivity[]
+  commissions Commission[]
+}
+model Commission {
+  id String @id @default(cuid())
+  amount Int
+  status String @default("PENDING")
+  generatedAt DateTime @default(now())
+  approvedAt DateTime?
+  paidAt DateTime?
+  affiliateId String
+  leadId String @unique
+  affiliate Affiliate @relation(fields:[affiliateId],references:[id])
+  lead Lead @relation(fields:[leadId],references:[id])
+}
+model LeadActivity {
+ id String @id @default(cuid())
+ type String
+ message String
+ createdAt DateTime @default(now())
+ leadId String
+ lead Lead @relation(fields:[leadId],references:[id])
+}
+model ReferralClick {
+ id String @id @default(cuid())
+ refCode String
+ sessionId String?
+ createdAt DateTime @default(now())
+ affiliateId String
+ affiliate Affiliate @relation(fields:[affiliateId],references:[id])
+}
+model AppSetting {
+ id String @id @default("default")
+ commissionMethod String @default("FIXED")
+ fixedAmount Int @default(75000)
+ percentage Float @default(10)
+ triggerOnPayment Boolean @default(true)
+}

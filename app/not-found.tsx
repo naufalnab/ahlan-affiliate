@@ -1,0 +1,1 @@
+import Link from "next/link"; export default function NotFound(){return <main className="shell section center"><p className="eyebrow">404</p><h1>Halaman tidak ditemukan</h1><p className="lead">Link mungkin sudah berubah atau data tidak tersedia.</p><Link className="btn" href="/">Kembali ke beranda</Link></main>}
