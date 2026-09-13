@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, LayoutDashboard, UserCheck, BarChart3, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  LayoutDashboard,
+  UserCheck,
+  BarChart3,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { setDemoRoleAction } from "@/server/actions";
 
 interface DemoLoginClientProps {
@@ -16,12 +23,12 @@ export default function DemoLoginClient({ nextPath, requiredRole }: DemoLoginCli
 
   const handleSelectRole = async (role: "admin" | "affiliate" | "management") => {
     setLoadingRole(role);
-    // Set client cookie immediately
+    // Set client cookie immediately for instant client-side responsiveness
     document.cookie = `ahlan_demo_role=${role}; path=/; max-age=604800; SameSite=Lax`;
-    // Also call server action to ensure cookie header
+    // Also trigger server action to ensure headers are set
     await setDemoRoleAction(role);
 
-    // If nextPath matches the role's area, send them to nextPath, otherwise to default role route
+    // If nextPath matches the role's area, resume to nextPath; otherwise navigate to role root
     let target = `/${role}`;
     if (nextPath && nextPath.startsWith(`/${role}`)) {
       target = nextPath;
@@ -31,138 +38,270 @@ export default function DemoLoginClient({ nextPath, requiredRole }: DemoLoginCli
   };
 
   return (
-    <div className="grid" style={{ gap: 16, textAlign: "left", maxWidth: 640, margin: "0 auto", width: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        textAlign: "left",
+        maxWidth: 640,
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
       {requiredRole && nextPath && (
-        <div className="notice" style={{ background: "#fff2d8", borderColor: "#f1deaf", color: "#8b6828", marginBottom: 8 }}>
+        <div
+          className="notice"
+          style={{
+            background: "#fff5df",
+            borderColor: "#f0dfb2",
+            color: "#805c19",
+            marginBottom: 4,
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}
+        >
           Halaman <code>{nextPath}</code> memerlukan akses peran <b>{requiredRole.toUpperCase()}</b>. Silakan pilih peran di bawah untuk melanjutkan.
         </div>
       )}
 
-      {/* Admin Card */}
+      {/* CARD 1: Admin Ahlan (Recommended Starting Point) */}
       <button
         type="button"
-        className="card"
+        className="role-card-btn admin-recommended"
         onClick={() => handleSelectRole("admin")}
         disabled={loadingRole !== null}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "20px 24px",
-          transition: "all 0.2s ease",
-          borderColor: requiredRole === "admin" ? "#0d5c4d" : "#d5ddd7",
-          borderWidth: requiredRole === "admin" ? 2 : 1,
-          background: "#fff",
-          cursor: "pointer",
-          width: "100%",
-          textAlign: "left",
-        }}
+        aria-label="Masuk sebagai Admin Ahlan - Disarankan mulai di sini"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ background: "#edf4ee", padding: 12, borderRadius: 10, color: "#0d5c4d" }}>
-            <LayoutDashboard size={24} />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flex: 1 }}>
+          <div className="role-icon-box" style={{ marginTop: 2 }}>
+            <LayoutDashboard size={22} />
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h2 style={{ fontSize: 18, margin: "0 0 4px" }}>Masuk sebagai Admin Operasional</h2>
-              {requiredRole === "admin" && <span className="demo" style={{ padding: "2px 8px", fontSize: 11 }}>Rekomendasi</span>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "6px 8px",
+                marginBottom: 4,
+              }}
+            >
+              <span
+                className="eyebrow"
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "#8b6828",
+                  margin: 0,
+                }}
+              >
+                OPERASIONAL
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: "0.05em",
+                  color: "#73561d",
+                  background: "#fbf1d9",
+                  border: "1px solid #ebdab2",
+                  padding: "2px 7px",
+                  borderRadius: 6,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Sparkles size={11} color="#8b6828" />
+                DISARANKAN MULAI DI SINI
+              </span>
             </div>
-            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-              Kelola calon peserta (Suyadi), update status lunas, verifikasi komisi, dan kelola mitra.
+
+            <h2
+              style={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: "#193830",
+                margin: "0 0 5px",
+                lineHeight: 1.3,
+              }}
+            >
+              Masuk sebagai Admin Ahlan
+            </h2>
+
+            <p
+              className="muted"
+              style={{
+                margin: 0,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: "#617169",
+              }}
+            >
+              Kelola calon peserta, tindak lanjut pendaftaran, pembayaran, affiliate, dan komisi.
             </p>
           </div>
         </div>
-        <div>
+
+        <div className="role-arrow-circle" aria-hidden="true">
           {loadingRole === "admin" ? (
-            <Loader2 className="animate-spin" size={18} color="#0d5c4d" />
+            <Loader2 className="animate-spin" size={17} />
           ) : (
-            <ArrowRight size={18} color="#0d5c4d" />
+            <ArrowRight size={17} />
           )}
         </div>
       </button>
 
-      {/* Affiliate Card */}
+      {/* CARD 2: Affiliate (Mitra - Naufal Nabila) */}
       <button
         type="button"
-        className="card"
+        className="role-card-btn"
         onClick={() => handleSelectRole("affiliate")}
         disabled={loadingRole !== null}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "20px 24px",
-          transition: "all 0.2s ease",
-          borderColor: requiredRole === "affiliate" ? "#0d5c4d" : "#d5ddd7",
-          borderWidth: requiredRole === "affiliate" ? 2 : 1,
-          background: "#fff",
-          cursor: "pointer",
-          width: "100%",
-          textAlign: "left",
-        }}
+        aria-label="Masuk sebagai Affiliate - Persona Demo Naufal Nabila"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ background: "#edf4ee", padding: 12, borderRadius: 10, color: "#0d5c4d" }}>
-            <UserCheck size={24} />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flex: 1 }}>
+          <div className="role-icon-box" style={{ marginTop: 2 }}>
+            <UserCheck size={22} />
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h2 style={{ fontSize: 18, margin: "0 0 4px" }}>Masuk sebagai Affiliate Naufal</h2>
-              {requiredRole === "affiliate" && <span className="demo" style={{ padding: "2px 8px", fontSize: 11 }}>Rekomendasi</span>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "6px 8px",
+                marginBottom: 4,
+              }}
+            >
+              <span
+                className="eyebrow"
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "#8b6828",
+                  margin: 0,
+                }}
+              >
+                MITRA
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#0d5c4d",
+                  background: "#edf4ee",
+                  border: "1px solid #d5e5db",
+                  padding: "1px 7px",
+                  borderRadius: 6,
+                }}
+              >
+                Naufal Nabila
+              </span>
             </div>
-            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-              Pantau tautan unik NAUFAL, QR code, calon peserta yang masuk, dan saldo komisi.
+
+            <h2
+              style={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: "#193830",
+                margin: "0 0 5px",
+                lineHeight: 1.3,
+              }}
+            >
+              Masuk sebagai Affiliate
+            </h2>
+
+            <p
+              className="muted"
+              style={{
+                margin: 0,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: "#617169",
+              }}
+            >
+              Pantau link referral, calon peserta yang masuk, status pendaftaran, dan komisi.
             </p>
           </div>
         </div>
-        <div>
+
+        <div className="role-arrow-circle" aria-hidden="true">
           {loadingRole === "affiliate" ? (
-            <Loader2 className="animate-spin" size={18} color="#0d5c4d" />
+            <Loader2 className="animate-spin" size={17} />
           ) : (
-            <ArrowRight size={18} color="#0d5c4d" />
+            <ArrowRight size={17} />
           )}
         </div>
       </button>
 
-      {/* Management Card */}
+      {/* CARD 3: Manajemen Ahlan (Strategis) */}
       <button
         type="button"
-        className="card"
+        className="role-card-btn"
         onClick={() => handleSelectRole("management")}
         disabled={loadingRole !== null}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "20px 24px",
-          transition: "all 0.2s ease",
-          borderColor: requiredRole === "management" ? "#0d5c4d" : "#d5ddd7",
-          borderWidth: requiredRole === "management" ? 2 : 1,
-          background: "#fff",
-          cursor: "pointer",
-          width: "100%",
-          textAlign: "left",
-        }}
+        aria-label="Masuk sebagai Manajemen Ahlan - Perspektif Strategis"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ background: "#edf4ee", padding: 12, borderRadius: 10, color: "#0d5c4d" }}>
-            <BarChart3 size={24} />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flex: 1 }}>
+          <div className="role-icon-box" style={{ marginTop: 2 }}>
+            <BarChart3 size={22} />
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h2 style={{ fontSize: 18, margin: "0 0 4px" }}>Masuk sebagai Executive Management</h2>
-              {requiredRole === "management" && <span className="demo" style={{ padding: "2px 8px", fontSize: 11 }}>Rekomendasi</span>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "6px 8px",
+                marginBottom: 4,
+              }}
+            >
+              <span
+                className="eyebrow"
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "#8b6828",
+                  margin: 0,
+                }}
+              >
+                STRATEGIS
+              </span>
             </div>
-            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-              Tinjau performa akuisisi program, total revenue, rasio konversi, dan simulator proyeksi.
+
+            <h2
+              style={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: "#193830",
+                margin: "0 0 5px",
+                lineHeight: 1.3,
+              }}
+            >
+              Masuk sebagai Manajemen Ahlan
+            </h2>
+
+            <p
+              className="muted"
+              style={{
+                margin: 0,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: "#617169",
+              }}
+            >
+              Pantau peserta baru, tingkat konversi, pendapatan referral, biaya komisi, dan proyeksi pertumbuhan.
             </p>
           </div>
         </div>
-        <div>
+
+        <div className="role-arrow-circle" aria-hidden="true">
           {loadingRole === "management" ? (
-            <Loader2 className="animate-spin" size={18} color="#0d5c4d" />
+            <Loader2 className="animate-spin" size={17} />
           ) : (
-            <ArrowRight size={18} color="#0d5c4d" />
+            <ArrowRight size={17} />
           )}
         </div>
       </button>
