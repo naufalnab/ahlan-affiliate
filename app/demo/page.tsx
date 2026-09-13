@@ -1,1 +1,35 @@
-import Link from "next/link"; export default function Demo(){const steps=[["1","Salin referral link Naufal","/affiliate"],["2","Buka halaman pendaftaran","/daftar?ref=NAUFAL"],["3","Daftarkan calon peserta demo","/daftar?ref=NAUFAL"],["4","Buka lead Suyadi di dashboard","/admin/leads"],["5","Ubah status hingga Lunas","/admin/leads"],["6","Lihat komisi yang dihasilkan","/admin/commissions"],["7","Kembali ke portal Naufal","/affiliate"]];return <main className="shell section center"><p className="eyebrow">Panduan presentasi</p><h1>Coba Alur Affiliate</h1><p className="lead">Jelajahi alur dari referral sampai komisi dalam beberapa menit.</p><div className="grid">{steps.map(s=><Link className="card" href={s[2]} key={s[0]}><span className="eyebrow">LANGKAH {s[0]}</span><h2>{s[1]}</h2></Link>)}</div></main>}
+import { getRepository } from "@/lib/repository";
+import { appUrl } from "@/lib/format";
+import DemoGuidedExperience from "./demo-guided-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function Demo() {
+  const repo = await getRepository();
+  const leads = await repo.getLeads();
+  const commissions = await repo.getCommissions();
+
+  const suyadi = leads.find((l) => l.name.toLowerCase().includes("suyadi")) || leads[0];
+  const suyadiId = suyadi ? suyadi.id : "lead-suyadi";
+  const suyadiStatus = suyadi ? String(suyadi.status) : "DIHUBUNGI";
+
+  const hasLunasLead = leads.some((l) => l.status === "LUNAS" && l.id === suyadiId);
+  const naufalCommissions = commissions.filter((c) => c.leadId === suyadiId || c.affiliate?.code === "NAUFAL");
+  const hasCommission = naufalCommissions.length > 0;
+  const hasPaidCommission = naufalCommissions.some((c) => c.status === "PAID");
+
+  const referralUrl = `${appUrl()}/daftar?ref=NAUFAL`;
+
+  return (
+    <DemoGuidedExperience
+      summary={{
+        suyadiStatus,
+        suyadiId,
+        hasLunasLead,
+        hasCommission,
+        hasPaidCommission,
+        referralUrl,
+      }}
+    />
+  );
+}

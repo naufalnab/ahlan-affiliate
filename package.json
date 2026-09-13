@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "db:push": "sqlite3 prisma/dev.db < prisma/schema.sql",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
     "db:seed": "prisma db seed"
   },
   "prisma": { "seed": "tsx prisma/seed.ts" },

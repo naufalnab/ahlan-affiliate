@@ -1,2 +1,91 @@
-import Link from "next/link"; import { db } from "@/lib/db"; import { money } from "@/lib/format"; import { conversion } from "@/lib/domain";
-export default async function Management(){const [affiliates,leads,paid,commissions]=await Promise.all([db.affiliate.count(),db.lead.count(),db.lead.findMany({where:{status:"LUNAS"},include:{program:true}}),db.commission.findMany()]);const revenue=paid.reduce((s,x)=>s+(x.registrationValue||x.program.price),0),cost=commissions.reduce((s,x)=>s+x.amount,0);return <main className="shell section"><header className="nav"><img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan"/><Link className="btn alt" href="/management/simulator">Buka Simulator</Link></header><p className="eyebrow">Management view · Prototype / Demo</p><h1>Dampak affiliate terhadap pertumbuhan</h1><p className="lead">Ukur kontribusi referral terhadap jumlah peserta dan pendapatan.</p><div className="grid kpis">{[["Total Affiliate",affiliates],["Referral",leads],["Conversion Rate",`${conversion(paid.length,leads)}%`],["Revenue Referral",money(revenue)],["Affiliate Cost",money(cost)],["Net Revenue",money(revenue-cost)]].map(x=><div className="card" key={String(x[0])}><p className="muted">{x[0]}</p><p className="metric">{x[1]}</p></div>)}</div><div className="grid two" style={{marginTop:18}}><section className="card"><p className="eyebrow">Insight</p><h2>Afiliasi mengubah rekomendasi menjadi channel yang bisa diukur.</h2><p className="muted">Naufal memiliki conversion rate tertinggi pada data demo ini. Program Ammiyah Saudi Arabia menerima referral terbanyak.</p></section><section className="card"><p className="eyebrow">Aksi berikutnya</p><h2>Uji ekonomi sebelum meluncurkan program.</h2><Link className="btn" href="/management/simulator">Simulasikan program</Link></section></div></main>}
+import Link from "next/link";
+import { getRepository } from "@/lib/repository";
+import { money } from "@/lib/format";
+import { ResetDemoButton } from "@/components/ui";
+
+export const dynamic = "force-dynamic";
+
+export default async function Management() {
+  const repo = await getRepository();
+  const {
+    affiliatesCount,
+    leadsCount,
+    paidCount,
+    conversionRate,
+    revenue,
+    affiliateCost,
+    netRevenue,
+  } = await repo.getManagementMetrics();
+
+  return (
+    <main className="shell section">
+      <header className="nav">
+        <Link href="/">
+          <img className="logo" src="/brand/logo-ahlan.svg" alt="Ahlan" />
+        </Link>
+        <div className="actions">
+          <ResetDemoButton compact />
+          <Link className="btn alt" href="/management/simulator">
+            Buka Simulator
+          </Link>
+          <Link className="btn alt" href="/demo-login">
+            Ganti Peran
+          </Link>
+        </div>
+      </header>
+
+      <div style={{ marginTop: 24 }}>
+        <p className="eyebrow">Executive Management View · Prototype / Demo</p>
+        <h1>Dampak Affiliate Terhadap Pertumbuhan</h1>
+        <p className="lead">
+          Ukur kontribusi jaringan referral terhadap akuisisi peserta baru, pendapatan bruto, dan biaya komisi.
+        </p>
+      </div>
+
+      <div className="grid kpis" style={{ marginTop: 24 }}>
+        {[
+          ["Total Affiliate", affiliatesCount],
+          ["Total Referral", leadsCount],
+          ["Peserta Lunas", paidCount],
+          ["Conversion Rate", `${conversionRate}%`],
+          ["Revenue Referral", money(revenue)],
+          ["Biaya Komisi Affiliate", money(affiliateCost)],
+          ["Net Revenue (Bersih)", money(netRevenue)],
+        ].map(([label, val]) => (
+          <div className="card" key={String(label)}>
+            <p className="muted">{label}</p>
+            <p className="metric">{val}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid two" style={{ marginTop: 24 }}>
+        <section className="card">
+          <p className="eyebrow">Analisis Pertumbuhan</p>
+          <h2 style={{ margin: "6px 0 10px" }}>Mengubah rekomendasi menjadi channel akuisisi yang terukur</h2>
+          <p className="muted" style={{ lineHeight: 1.6 }}>
+            Mitra affiliate Naufal menyumbang conversion rate yang solid. Program Ammiyah Saudi Arabia mencatat volume referral terbesar. Dengan sistem komisi berbasis hasil (success-fee), margin program tetap sehat dan terprediksi.
+          </p>
+          <div style={{ marginTop: 18 }}>
+            <Link className="btn alt" href="/admin">
+              Buka Dashboard Operasional Admin →
+            </Link>
+          </div>
+        </section>
+
+        <section className="card">
+          <p className="eyebrow">Perencanaan Finansial</p>
+          <h2 style={{ margin: "6px 0 10px" }}>Uji kelayakan unit ekonomi program</h2>
+          <p className="muted" style={{ lineHeight: 1.6 }}>
+            Simulasikan proyeksi pendaftar, pendapatan kotor, alokasi komisi, dan laba bersih sebelum merilis skema affiliate ke publik.
+          </p>
+          <div style={{ marginTop: 18 }}>
+            <Link className="btn" href="/management/simulator">
+              Simulasikan Program Sekarang →
+            </Link>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

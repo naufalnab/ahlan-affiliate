@@ -1,2 +1,69 @@
-import Link from "next/link"; import { db } from "@/lib/db"; import { date,money } from "@/lib/format"; import { labels } from "@/lib/domain"; import { AdminShell } from "@/components/ui";
-export default async function Leads(){const leads=await db.lead.findMany({include:{program:true,affiliate:true,commissions:true},orderBy:{createdAt:"desc"}});const programs=await db.program.findMany();return <AdminShell><div className="pagehead"><p className="eyebrow">Calon peserta</p><h1>Kelola Lead Referral</h1><p className="muted">Cari, lihat status, dan tindak lanjuti calon peserta.</p></div><div className="filters"><input placeholder="Cari nama atau WhatsApp" aria-label="Cari lead"/><select aria-label="Filter program"><option>Semua program</option>{programs.map(p=><option key={p.id}>{p.name}</option>)}</select><select aria-label="Filter status"><option>Semua status</option><option>Lunas</option><option>Lead Baru</option></select></div><div className="tablewrap"><table><thead><tr><th>Nama</th><th>Program</th><th>Affiliate</th><th>Tanggal Masuk</th><th>Status</th><th>Komisi</th></tr></thead><tbody>{leads.map(l=><tr key={l.id}><td><Link href={`/admin/leads/${l.id}`}><b>{l.name}</b><br/><span className="small muted">{l.phone}</span></Link></td><td>{l.program.name}</td><td>{l.affiliate?.name||"—"}</td><td>{date(l.createdAt)}</td><td><span className={`badge ${l.status}`}>{labels[l.status]}</span></td><td>{l.commissions[0]?money(l.commissions[0].amount):"Menunggu"}</td></tr>)}</tbody></table></div></AdminShell>}
+import Link from "next/link";
+import { getRepository } from "@/lib/repository";
+import { date, money } from "@/lib/format";
+import { labels } from "@/lib/domain";
+import { AdminShell } from "@/components/ui";
+
+export const dynamic = "force-dynamic";
+
+export default async function Leads() {
+  const repo = await getRepository();
+  const leads = await repo.getLeads();
+  const programs = await repo.getPrograms();
+
+  return (
+    <AdminShell>
+      <div className="pagehead">
+        <p className="eyebrow">Calon peserta</p>
+        <h1>Kelola Lead Referral ({leads.length})</h1>
+        <p className="muted">Cari, lihat status, dan tindak lanjuti calon peserta.</p>
+      </div>
+
+      <div className="tablewrap" style={{ marginTop: 16 }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Calon Peserta</th>
+              <th>Program</th>
+              <th>Affiliate</th>
+              <th>Tanggal Masuk</th>
+              <th>Status</th>
+              <th>Komisi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leads.map((l) => {
+              const comm = l.commissions?.[0];
+              return (
+                <tr key={l.id}>
+                  <td>
+                    <Link href={`/admin/leads/${l.id}`} style={{ textDecoration: "none" }}>
+                      <b>{l.name}</b>
+                      <br />
+                      <span className="small muted">{l.phone}</span>
+                    </Link>
+                  </td>
+                  <td>{l.program?.name || "—"}</td>
+                  <td>{l.affiliate?.name || "— (Direct)"}</td>
+                  <td>{date(l.createdAt)}</td>
+                  <td>
+                    <span className={`badge ${l.status}`}>{labels[l.status] || l.status}</span>
+                  </td>
+                  <td>
+                    {comm ? (
+                      <span style={{ fontWeight: 600, color: comm.status === "PAID" ? "#167043" : "#8b6828" }}>
+                        {money(comm.amount)} ({comm.status})
+                      </span>
+                    ) : (
+                      <span className="muted">Menunggu</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </AdminShell>
+  );
+}
